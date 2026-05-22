@@ -1,0 +1,38 @@
+# venv
+.venv/
+venv/
+env/
+
+# python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+
+# os
+.DS_Store
+Thumbs.db
+
+# editors
+.vscode/
+.idea/
+*.swp
+
+# data — keep raw, ignore processed (regenerable)
+data/processed/
+
+# artifacts — regenerable via pipeline
+artifacts/*.pkl
+artifacts/*.json
+artifacts/*.csv
+
+# streamlit
+.streamlit/
+
+# logs
+*.log
+/tmp/streamlit.log
+
+# secrets
+.env
+*.key
