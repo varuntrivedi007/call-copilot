@@ -1,3 +1,7 @@
+## Emails
+
+trivedivarun2004@gmail.com, evamewada0@gmail.com, joshiavadh85@gmail.com, nishp876@gmail.com, priyalshah2307@gmail.com, shlokpatel598@gmail.com
+
 # Subscription Companion
 
 **Pillar 01 · SML · Datathon entry**
