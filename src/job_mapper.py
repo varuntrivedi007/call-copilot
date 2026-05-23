@@ -1,11 +1,3 @@
-"""Map free-text job titles to the dataset's job categories.
-
-The model was trained on a fixed set of job categories. When an agent enters
-something like "software engineer" or "doctor", we map to the closest known
-category so the model can score it, while preserving the original text for
-the LLM-generated scripts.
-"""
-
 from typing import Optional
 
 DATASET_JOBS = {
@@ -15,7 +7,7 @@ DATASET_JOBS = {
 }
 
 KEYWORDS = [
-    # (mapped_category, [keywords])
+    
     ("technician", ["engineer", "developer", "programmer", "software", "tech",
                     "it ", "data", "analyst", "designer", "architect", "devops",
                     "scientist", "research"]),

@@ -1,9 +1,3 @@
-"""Groq Llama wrapper for personalized pitch + objection responses.
-
-Falls back to rule-based output if the API key is missing or the call fails,
-so the Streamlit UI never goes blank during a demo.
-"""
-
 import json
 import os
 from functools import lru_cache
@@ -184,7 +178,7 @@ def generate_full_flow(customer: dict, probability: float, pos: list, neg: list,
     raw = _call(key, system, user, max_tokens=900)
     if not raw:
         return None
-    # Strip ```json fences if model added them anyway
+    
     cleaned = raw.strip()
     if cleaned.startswith("```"):
         cleaned = cleaned.split("```", 2)[1]

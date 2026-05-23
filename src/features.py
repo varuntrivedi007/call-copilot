@@ -1,8 +1,3 @@
-"""Shared feature configuration + split helpers.
-
-`duration` is excluded from the model feature set — it leaks the outcome.
-"""
-
 from pathlib import Path
 import pandas as pd
 from sklearn.model_selection import train_test_split

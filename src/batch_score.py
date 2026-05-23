@@ -1,14 +1,3 @@
-"""Bulk score a CSV of customers.
-
-Fills missing columns with sensible defaults (macro features = recent median,
-campaign history = first-contact). Output keeps the original columns plus
-probability, label, bucket, and top drivers.
-
-Pillar 01 note: the scorer does not sort or rank. Sorting/filtering is left to
-the consumer (UI table). The UI is responsible for not displaying a
-probability-descending list.
-"""
-
 import argparse
 from pathlib import Path
 from typing import Optional
@@ -34,13 +23,13 @@ def normalize_uploaded(df: pd.DataFrame, reference: Optional[pd.DataFrame] = Non
 
     df = df.copy()
 
-    # Categorical defaults
+    
     for col in CATEGORICAL:
         if col not in df.columns:
             df[col] = "unknown"
         df[col] = df[col].astype(str).fillna("unknown")
 
-    # Engineered pdays fields
+    
     if "pdays" in df.columns and "was_contacted_before" not in df.columns:
         df["was_contacted_before"] = (df["pdays"] != 999).astype(int)
         df["pdays_clean"] = df["pdays"].where(df["pdays"] != 999)
@@ -49,7 +38,7 @@ def normalize_uploaded(df: pd.DataFrame, reference: Optional[pd.DataFrame] = Non
     if "pdays_clean" not in df.columns:
         df["pdays_clean"] = float("nan")
 
-    # Campaign history defaults
+    
     if "previous" not in df.columns:
         df["previous"] = 0
     if "campaign" not in df.columns:
@@ -57,14 +46,14 @@ def normalize_uploaded(df: pd.DataFrame, reference: Optional[pd.DataFrame] = Non
     if "age" not in df.columns:
         df["age"] = int(reference["age"].median())
 
-    # Macro defaults
+    
     for col, val in _recent_macro_defaults(reference).items():
         if col not in df.columns:
             df[col] = val
         else:
             df[col] = df[col].fillna(val)
 
-    # Seasonality defaults from last reference row
+    
     last = reference.iloc[-1]
     if "month" not in df.columns:
         df["month"] = str(last.get("month", "may"))

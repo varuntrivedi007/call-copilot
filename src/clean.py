@@ -1,12 +1,3 @@
-"""Clean bank marketing data and produce train-ready CSV.
-
-Decisions:
-- Keep 'unknown' as a category (signal, not noise).
-- Split pdays into a binary 'was_contacted_before' flag + numeric clean column.
-- Drop 'duration' from features (post-call leakage); keep it side-by-side for analytics.
-- Preserve the 'y' label as 0/1.
-"""
-
 from pathlib import Path
 import pandas as pd
 

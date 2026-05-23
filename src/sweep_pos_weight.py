@@ -19,7 +19,7 @@ from sklearn.preprocessing import LabelEncoder
 from features import CATEGORICAL, FEATURES, NUMERIC, drop_duration, load_processed, split
 
 ART = Path("artifacts")
-ART.mkdir(exist_ok=True)
+WEIGHTS = [8, 10, 12, 15, 20]
 
 
 def encode_categoricals(X_train, X_val, X_test):
@@ -37,29 +37,13 @@ def encode_categoricals(X_train, X_val, X_test):
 
 def best_f2_threshold(y_true, proba):
     precision, recall, thresholds = precision_recall_curve(y_true, proba)
-    
-    beta = 2
-    f2 = (1 + beta**2) * precision * recall / (beta**2 * precision + recall + 1e-12)
-    
+    f2 = (1 + 4) * precision * recall / (4 * precision + recall + 1e-12)
     f2 = f2[:-1]
     best_idx = int(np.nanargmax(f2))
     return float(thresholds[best_idx]), float(f2[best_idx])
 
 
-def main():
-    df = load_processed()
-    (X_train, y_train), (X_val, y_val), (X_test, y_test) = split(df)
-    X_train = drop_duration(X_train)
-    X_val = drop_duration(X_val)
-    X_test = drop_duration(X_test)
-
-    X_train, X_val, X_test, encoders = encode_categoricals(X_train, X_val, X_test)
-
-    pos = int((y_train == 1).sum())
-    neg = int((y_train == 0).sum())
-    scale_pos_weight = neg / pos
-    print(f"scale_pos_weight = {scale_pos_weight:.3f} (neg={neg}, pos={pos})")
-
+def train_one(X_train, y_train, X_val, y_val, spw):
     model = lgb.LGBMClassifier(
         n_estimators=800,
         learning_rate=0.05,
@@ -68,7 +52,7 @@ def main():
         subsample=0.9,
         colsample_bytree=0.9,
         reg_lambda=1.0,
-        scale_pos_weight=scale_pos_weight,
+        scale_pos_weight=spw,
         random_state=42,
         n_jobs=-1,
         verbose=-1,
@@ -81,47 +65,77 @@ def main():
         callbacks=[lgb.early_stopping(50, verbose=False)],
         categorical_feature=CATEGORICAL,
     )
+    return model
 
-    val_proba_raw = model.predict_proba(X_val)[:, 1]
-    test_proba_raw = model.predict_proba(X_test)[:, 1]
+
+def main():
+    df = load_processed()
+    (X_train, y_train), (X_val, y_val), (X_test, y_test) = split(df)
+    X_train = drop_duration(X_train)
+    X_val = drop_duration(X_val)
+    X_test = drop_duration(X_test)
+    X_train, X_val, X_test, encoders = encode_categoricals(X_train, X_val, X_test)
+
+    results = []
+    best_f2 = -1
+    best_spw = None
+    best_model = None
+
+    for spw in WEIGHTS:
+        print(f"\n--- training with scale_pos_weight={spw} ---")
+        model = train_one(X_train, y_train, X_val, y_val, spw)
+        
+        calibrated = CalibratedClassifierCV(model, method="isotonic", cv="prefit")
+        calibrated.fit(X_val, y_val)
+        val_proba = calibrated.predict_proba(X_val)[:, 1]
+        threshold, f2 = best_f2_threshold(y_val, val_proba)
+        pr_auc = average_precision_score(y_val, val_proba)
+        print(f"  val F2={f2:.4f}  PR-AUC={pr_auc:.4f}  threshold={threshold:.4f}")
+        results.append({
+            "scale_pos_weight": spw,
+            "val_f2": f2,
+            "val_pr_auc": pr_auc,
+            "threshold": threshold,
+        })
+        if f2 > best_f2:
+            best_f2 = f2
+            best_spw = spw
+            best_model = model
+            best_calibrator = calibrated
+            best_threshold = threshold
+
+    print(f"\n=== winner: scale_pos_weight={best_spw} (val F2={best_f2:.4f}) ===")
 
     
-    calibrated = CalibratedClassifierCV(model, method="isotonic", cv="prefit")
-    calibrated.fit(X_val, y_val)
-    val_proba = calibrated.predict_proba(X_val)[:, 1]
-    test_proba = calibrated.predict_proba(X_test)[:, 1]
-
-    threshold, f2_at = best_f2_threshold(y_val, val_proba)
-    print(f"chosen F2 threshold: {threshold:.4f} (val F2={f2_at:.4f})")
-
-    metrics = {}
+    test_proba = best_calibrator.predict_proba(X_test)[:, 1]
+    val_proba = best_calibrator.predict_proba(X_val)[:, 1]
+    final = {}
     for name, y_true, proba in [("val", y_val, val_proba), ("test", y_test, test_proba)]:
-        pred = (proba >= threshold).astype(int)
-        metrics[name] = {
+        pred = (proba >= best_threshold).astype(int)
+        final[name] = {
             "pr_auc": float(average_precision_score(y_true, proba)),
             "roc_auc": float(roc_auc_score(y_true, proba)),
             "f1": float(f1_score(y_true, pred)),
             "f2": float(fbeta_score(y_true, pred, beta=2)),
             "confusion": confusion_matrix(y_true, pred).tolist(),
         }
-    print(json.dumps(metrics, indent=2))
+    print(json.dumps(final, indent=2))
 
-    raw_metrics = {
-        "val_pr_auc_raw": float(average_precision_score(y_val, val_proba_raw)),
-        "test_pr_auc_raw": float(average_precision_score(y_test, test_proba_raw)),
-    }
-    metrics["raw"] = raw_metrics
-
+   
     with open(ART / "model.pkl", "wb") as f:
-        pickle.dump(model, f)
+        pickle.dump(best_model, f)
     with open(ART / "calibrator.pkl", "wb") as f:
-        pickle.dump(calibrated, f)
+        pickle.dump(best_calibrator, f)
     with open(ART / "encoders.pkl", "wb") as f:
         pickle.dump(encoders, f)
     with open(ART / "metrics.json", "w") as f:
-        json.dump({"threshold": threshold, **metrics}, f, indent=2)
-    with open(ART / "feature_list.json", "w") as f:
-        json.dump({"features": FEATURES, "categorical": CATEGORICAL, "numeric": NUMERIC}, f, indent=2)
+        json.dump({
+            "threshold": best_threshold,
+            "scale_pos_weight": best_spw,
+            **final,
+        }, f, indent=2)
+    with open(ART / "spw_sweep.json", "w") as f:
+        json.dump({"sweep": results, "winner": best_spw}, f, indent=2)
     print("artifacts saved")
 
 

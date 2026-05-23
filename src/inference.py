@@ -1,9 +1,3 @@
-"""Inference + explanation helpers shared by Streamlit app and CLI demos.
-
-`predict_one` returns probability, calibrated probability, top SHAP drivers
-mapped to talking points, and a structured 'flow' the agent can read.
-"""
-
 import json
 import pickle
 from pathlib import Path
@@ -50,7 +44,7 @@ class Copilot:
             if val in le.classes_:
                 df[col] = le.transform([val])
             else:
-                # Unknown category at inference -> fall back to most common during training
+                
                 df[col] = le.transform([le.classes_[0]])
         return df[FEATURES]
 

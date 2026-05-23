@@ -1,17 +1,3 @@
-"""Optuna hyperparameter sweep for LightGBM, then retrain + recalibrate.
-
-Runs 50 trials maximizing val PR-AUC. After the best trial is found, retrains
-on the full training set, recalibrates probabilities with isotonic regression
-on the validation set, and re-picks the F2-optimal threshold.
-
-Outputs:
-  artifacts/model.pkl          — best LightGBM
-  artifacts/calibrator.pkl     — isotonic calibrator
-  artifacts/encoders.pkl       — LabelEncoders (unchanged from train.py)
-  artifacts/metrics.json       — new metrics + chosen threshold
-  artifacts/optuna_best.json   — best hyperparams + study history
-"""
-
 import json
 import pickle
 from pathlib import Path
@@ -117,7 +103,7 @@ def main():
     print(f"best val PR-AUC: {study.best_value:.4f}")
     print(f"best params: {json.dumps(study.best_params, indent=2)}")
 
-    # Retrain with best params
+    
     best_model = make_model(study.best_params, scale_pos_weight)
     best_model.fit(
         X_train,
@@ -128,7 +114,7 @@ def main():
         categorical_feature=CATEGORICAL,
     )
 
-    # Calibrate on validation set
+    
     calibrated = CalibratedClassifierCV(best_model, method="isotonic", cv="prefit")
     calibrated.fit(X_val, y_val)
     val_proba = calibrated.predict_proba(X_val)[:, 1]

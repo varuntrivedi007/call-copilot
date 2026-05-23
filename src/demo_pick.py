@@ -1,9 +1,3 @@
-"""Pick three demo customers from the validation set: high / mid / low probability.
-
-Writes the row indices and metadata to artifacts/demo_customers.json so the
-Streamlit UI and rehearsal script can jump straight to them.
-"""
-
 import json
 from pathlib import Path
 

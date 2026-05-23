@@ -1,15 +1,4 @@
-"""Map (feature, value, shap_direction) -> plain-English driver + conversation hint.
-
-The dictionary lookup keeps the system explainable to non-ML judges. The agent
-sees the *why* (driver) and a *what to say* (hint). Generic fallbacks cover
-features we did not write a specific cell for.
-"""
-
 from typing import Optional
-
-# Each entry: feature -> list of rules. The first matching rule wins.
-# A rule is a callable on the raw row value plus a sign of the SHAP contribution.
-
 DRIVER_RULES = {
     "poutcome": [
         ("success", "+", "Previous campaign converted",

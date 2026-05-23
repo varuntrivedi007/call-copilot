@@ -1,10 +1,3 @@
-"""Live objection handler.
-
-Agent types or selects what the customer just said. We keyword-match against
-common objection categories and return a tailored counter that pulls in
-relevant customer context (job, marital status, prior contact, etc.).
-"""
-
 from dataclasses import dataclass
 from typing import Optional
 
@@ -12,7 +5,7 @@ try:
     from llm import generate_objection_response, llm_available
 except ImportError:
     generate_objection_response = None
-    llm_available = lambda: False  # noqa: E731
+    llm_available = lambda: False  
 
 
 @dataclass
