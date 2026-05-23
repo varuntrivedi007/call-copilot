@@ -1,9 +1,3 @@
-"""Subscription Companion — agent-facing call copilot.
-
-Pillar 01 rule: agent picks the customer (or call comes in inbound). Tool
-reacts with confidence, drivers, conversation flow. No ranked lead lists.
-"""
-
 import sys
 import textwrap
 from pathlib import Path
@@ -18,11 +12,11 @@ def md(html: str):
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
-from batch_score import normalize_uploaded, score_dataframe  # noqa: E402
-from features import CATEGORICAL, NUMERIC, load_processed  # noqa: E402
-from inference import Copilot  # noqa: E402
-from llm import llm_available  # noqa: E402
-from objection_handler import list_categories, respond  # noqa: E402
+from batch_score import normalize_uploaded, score_dataframe  
+from features import CATEGORICAL, NUMERIC, load_processed  
+from inference import Copilot 
+from llm import llm_available 
+from objection_handler import list_categories, respond  
 
 
 st.set_page_config(
@@ -33,10 +27,9 @@ st.set_page_config(
 )
 
 
-# ---- Design tokens ---------------------------------------------------------
-COLOR_PRIMARY = "#4F46E5"          # indigo-600
-COLOR_PRIMARY_SOFT = "#EEF2FF"     # indigo-50
-COLOR_ACCENT = "#7C3AED"           # violet-600
+COLOR_PRIMARY = "#4F46E5"          
+COLOR_PRIMARY_SOFT = "#EEF2FF"  
+COLOR_ACCENT = "#7C3AED"          
 COLOR_TEXT = "#0B1220"
 COLOR_TEXT_SOFT = "#1E293B"
 COLOR_MUTED = "#64748B"
@@ -699,19 +692,19 @@ def new_customer_form(df: pd.DataFrame) -> dict:
             unsafe_allow_html=True,
         )
 
-    # First-contact defaults
+   
     cust["poutcome"] = "nonexistent"
     cust["previous"] = 0
     cust["campaign"] = 1
     cust["was_contacted_before"] = 0
     cust["pdays_clean"] = float("nan")
 
-    # Seasonality from last known row
+    
     last_row = df.iloc[-1]
     cust["month"] = str(last_row.get("month", "may"))
     cust["day_of_week"] = str(last_row.get("day_of_week", "mon"))
 
-    # Macro features: median of last 1000 rows = recent-period proxy
+    
     recent = df.tail(1000)
     for macro in ["emp_var_rate", "cons_price_idx", "cons_conf_idx", "euribor3m", "nr_employed"]:
         if macro in df.columns:
@@ -842,7 +835,7 @@ def main():
     df = get_data()
     copilot = get_copilot()
 
-    # Sidebar -----------------------------------------------------------------
+    
     st.sidebar.markdown(
         f"""
         <div style="padding:6px 0 14px 0">
@@ -888,7 +881,7 @@ def main():
     elif mode == "Batch upload":
         cust = batch_upload_view(df, copilot)
         if cust is None:
-            return  # batch_upload_view already rendered table; no single customer selected yet
+            return  
     else:
         cust = build_customer_form(df)
 
@@ -908,7 +901,7 @@ def main():
         unsafe_allow_html=True,
     )
 
-    # Main area ---------------------------------------------------------------
+
     result = copilot.predict(cust)
 
     render_hero(cust, result)

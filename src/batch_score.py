@@ -91,7 +91,7 @@ def score_dataframe(df: pd.DataFrame, copilot) -> pd.DataFrame:
 
 
 def main():
-    from inference import Copilot  # local import to avoid Streamlit load order issues
+    from inference import Copilot  
 
     parser = argparse.ArgumentParser(description="Bulk score customers from CSV")
     parser.add_argument("--input", required=True, help="Path to input CSV")

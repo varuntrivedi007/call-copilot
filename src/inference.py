@@ -17,7 +17,7 @@ try:
 except ImportError:
     llm_full_flow = None
     llm_generate_pitch = None
-    llm_available = lambda: False  # noqa: E731
+    llm_available = lambda: False  
 
 ART = Path("artifacts")
 
